@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -10,6 +11,9 @@ public class MainManager : MonoBehaviour
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
+    public int highScore;
+    public string highScoreName;
+    public Text highScoreText;
 
     public Text ScoreText;
     public GameObject GameOverText;
@@ -19,11 +23,15 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
+    private void Awake()
+    {
 
-          
+        LoadScore();
+    }
 
-        // Start is called before the first frame update
-        void Start()
+
+    // Start is called before the first frame update
+    void Start()
     {
         ScoreText.text = PlayerData.Instance.playerName + $" Score : {m_Points}";
         const float step = 0.6f;
@@ -76,6 +84,43 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        if (m_Points > highScore)
+        {
+            SaveScore();
+            LoadScore();
+        }
     }
-   
+    [System.Serializable]
+    class SaveData
+    {
+        public int highScore;
+        public string highScoreName;
+    }
+
+    public void SaveScore()
+    {
+        highScore = m_Points;
+        SaveData data = new SaveData();
+        data.highScore = highScore;
+        data.highScoreName = PlayerData.Instance.playerName;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            highScore = data.highScore;
+            highScoreName = data.highScoreName;
+            highScoreText.text = "High Score: " + highScoreName + " : " + highScore;
+        }
+    }
+
 }
